@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 
 // 配置設定
 const CONFIG = {
-    AUTH_CODE: 'maimai2024', // 授權碼，可在此修改
+    AUTH_CODE: process.env.AUTH_CODE || 'maimai2024', // 授權碼，優先使用環境變數 AUTH_CODE
     DATA_FILE: path.join(__dirname, 'data', 'playlists.json'),
     SONGS_FILE: path.join(__dirname, 'data', 'songs.json'),
     STATIC_PATH: path.join(__dirname, 'public'),
@@ -159,12 +159,13 @@ function initializeSystem() {
         console.log('');
         console.log('系統資訊：');
         console.log('- 伺服器埠號: ' + PORT);
-        console.log('- 預設授權碼: ' + CONFIG.AUTH_CODE);
+        console.log('- 目前授權碼: ' + CONFIG.AUTH_CODE + (process.env.AUTH_CODE ? ' (來自環境變數)' : ' (預設值)'));
         console.log('- 資料儲存路徑: ' + CONFIG.DATA_FILE);
         console.log('');
         console.log('注意事項：');
         console.log('- data/ 目錄中的檔案包含使用者資料');
-        console.log('- 授權碼可在 app.js 中的 CONFIG.AUTH_CODE 修改');
+        console.log('- 建議使用環境變數 AUTH_CODE 設定授權碼（更安全）');
+        console.log('- 或在 app.js 中的 CONFIG.AUTH_CODE 修改預設值');
         console.log('- 建議定期備份 data/ 目錄');
     } else {
         console.log('✅ 系統檢查完成，所有必要檔案已就緒');
@@ -684,7 +685,7 @@ app.listen(PORT, () => {
     console.log('🎉 系統啟動完成！');
     console.log('=====================================');
     console.log(`📡 伺服器運行於: http://localhost:${PORT}`);
-    console.log(`🔑 授權碼: ${CONFIG.AUTH_CODE}`);
+    console.log(`🔑 授權碼: ${CONFIG.AUTH_CODE}${process.env.AUTH_CODE ? ' (環境變數)' : ' (預設值)'}`);
     console.log(`📁 資料目錄: ${path.relative(__dirname, path.dirname(CONFIG.DATA_FILE))}/`);
     console.log(`📦 備份目錄: ${path.relative(__dirname, CONFIG.BACKUP_DIR)}/`);
     console.log('=====================================');
@@ -694,6 +695,11 @@ app.listen(PORT, () => {
     console.log('2. 使用授權碼建立和管理播放清單');
     console.log('3. 享受你的 maimai 遊戲體驗！');
     console.log('');
+    if (!process.env.AUTH_CODE) {
+        console.log('💡 提示：建議使用環境變數 AUTH_CODE 設定授權碼以提高安全性');
+        console.log('   範例: AUTH_CODE=your_password npm start');
+        console.log('');
+    }
 });
 
 module.exports = app;

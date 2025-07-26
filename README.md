@@ -182,8 +182,26 @@ http://localhost:3000
 
 ### 預設設定
 - **伺服器埠號**: 3000 (可透過環境變數 PORT 修改)
-- **預設授權碼**: `maimai2024` (可在 app.js 中修改)
+- **授權碼**: 優先使用環境變數 `AUTH_CODE`，若無則使用預設值 `maimai2024`
 - **資料儲存**: `data/playlists.json`
+
+### 🔐 環境變數設定範例
+```bash
+# Linux/Mac
+export AUTH_CODE="your_secure_password"
+npm start
+
+# 或一次性執行
+AUTH_CODE="your_secure_password" npm start
+
+# Windows PowerShell
+$env:AUTH_CODE="your_secure_password"
+npm start
+
+# Windows CMD
+set AUTH_CODE=your_secure_password
+npm start
+```
 
 ## 資料管理
 
@@ -309,10 +327,22 @@ GET /api/statistics
 ## 設定客製化
 
 ### 修改授權碼
-在 `app.js` 中修改：
+推薦使用環境變數設定（更安全）：
+```bash
+# 設定環境變數後啟動
+AUTH_CODE=your_secure_password npm start
+
+# Windows PowerShell
+$env:AUTH_CODE="your_secure_password"; npm start
+
+# Windows CMD
+set AUTH_CODE=your_secure_password && npm start
+```
+
+或在 `app.js` 中修改預設值：
 ```javascript
 const CONFIG = {
-    AUTH_CODE: 'your_new_password', // 修改這裡
+    AUTH_CODE: process.env.AUTH_CODE || 'your_new_default_password',
     // ...其他設定
 };
 ```
