@@ -1,0 +1,23 @@
+{
+  "name": "maiamaimapsystem",
+  "version": "1.0.0",
+  "description": "簡易音樂遊戲歌曲紀錄系統",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "backup": "node backup.js"
+  },
+  "keywords": ["node", "music", "game", "tracker"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "body-parser": "^1.20.2",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

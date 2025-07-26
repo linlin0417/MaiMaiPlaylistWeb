@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>maimai 待遊玩清單系統</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎵 maimai 待遊玩清單系統</h1>
+            <div class="stats-display" id="statsDisplay">
+                載入中...
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- 播放清單管理 -->
+            <section class="playlist-management">
+                <h2>播放清單管理</h2>
+                <div class="playlist-controls">
+                    <div class="create-playlist-form">
+                        <input type="text" id="newPlaylistName" placeholder="輸入新清單名稱..." class="playlist-input">
+                        <input type="password" id="createAuthCode" placeholder="授權碼" class="auth-input-small">
+                        <button id="createPlaylistBtn" class="btn btn-primary">建立清單</button>
+                    </div>
+                    <button id="refreshPlaylistsBtn" class="btn btn-secondary">🔄 重新整理</button>
+                </div>
+                
+                <div id="playlistsContainer" class="playlists-container">
+                    載入中...
+                </div>
+            </section>
+
+            <!-- 批量新增歌曲 -->
+            <section id="addSongsSection" class="add-songs-section" style="display: none;">
+                <h2>批量新增歌曲到：<span id="currentPlaylistName"></span></h2>
+                
+                <!-- 輸入格式選擇 -->
+                <div class="input-format-tabs">
+                    <button id="standardFormatTab" class="format-tab active" onclick="switchInputFormat('standard')">
+                        標準格式
+                    </button>
+                    <button id="markdownFormatTab" class="format-tab" onclick="switchInputFormat('markdown')">
+                        Markdown 格式
+                    </button>
+                </div>
+
+                <div class="batch-add-form">
+                    <!-- 標準格式輸入 -->
+                    <div id="standardFormatInput" class="format-input">
+                        <div class="form-group">
+                            <label for="batchSongs">歌曲清單（每行一首歌）</label>
+                            <textarea id="batchSongs" placeholder="格式：歌曲名稱|難度|備註（選填）
+例如：
+Connect|Master|練習手速
+Brain Power|Expert
+夜に駆ける|Advanced|新歌" rows="10"></textarea>
+                            <div class="format-help">
+                                <small>格式說明：歌曲名稱|難度|備註（選填）<br>
+                                難度：Basic, Advanced, Expert, Master, Re:Master</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Markdown 格式輸入 -->
+                    <div id="markdownFormatInput" class="format-input" style="display: none;">
+                        <div class="form-group">
+                            <label for="markdownSongs">Markdown 歌曲清單</label>
+                            <textarea id="markdownSongs" placeholder="支援以下格式：
+
+## 世界樹エリア-
+- [神室雪月花](https://www.youtube.com/watch?v=HYQUieIECBk)
+- [KONNANじゃないっ！](https://www.youtube.com/watch?v=tsFlouIY-us)
+- [鼓動](https://youtu.be/3UP4Hqwjk30?si=DR3edWPo6vXNT2QS)
+- Outlaw's Lullaby、Brand-new Japanesque
+- ばかみたい【Taxi Driver Edition】
+- DRAGONLADY
+
+## 另一個分類-
+- Garden Of The Dragon
+- ドラゴンエネルギー
+- 好きな惣菜発表ドラゴン" rows="15"></textarea>
+                            <div class="format-help">
+                                <small>支援格式：<br>
+                                • <code>## 分類名稱-</code> - 分類標題<br>
+                                • <code>- [歌曲名稱](連結)</code> - 帶連結的歌曲<br>
+                                • <code>- 歌曲名稱</code> - 純文字歌曲<br>
+                                • <code>- 歌曲1、歌曲2、歌曲3</code> - 多首歌曲（用逗號或頓號分隔）<br>
+                                * 預設難度為 Master，分類會自動加入備註</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="batchAuthCode">授權碼 *</label>
+                        <input type="password" id="batchAuthCode" required placeholder="輸入授權碼">
+                    </div>
+                    
+                    <div class="batch-actions">
+                        <button id="addBatchSongsBtn" class="btn btn-primary">批量新增歌曲</button>
+                        <button id="cancelBatchBtn" class="btn btn-secondary">取消</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 歌曲清單顯示 -->
+            <section id="songsSection" class="songs-section" style="display: none;">
+                <div class="section-header">
+                    <h2>清單歌曲：<span id="songListPlaylistName"></span></h2>
+                    <div class="controls">
+                        <select id="statusFilter" class="filter-select">
+                            <option value="">所有狀態</option>
+                            <option value="pending">待遊玩</option>
+                            <option value="played">已遊玩</option>
+                        </select>
+                        <select id="difficultyFilter" class="filter-select">
+                            <option value="">所有難度</option>
+                            <option value="Basic">Basic</option>
+                            <option value="Advanced">Advanced</option>
+                            <option value="Expert">Expert</option>
+                            <option value="Master">Master</option>
+                            <option value="Re:Master">Re:Master</option>
+                        </select>
+                        <input type="text" id="searchInput" placeholder="搜尋歌曲..." class="search-input">
+                        <button id="backToPlaylistsBtn" class="btn btn-secondary">← 返回清單</button>
+                    </div>
+                </div>
+                
+                <!-- 分頁控制 -->
+                <div id="paginationTop" class="pagination-controls">
+                    <!-- 分頁按鈕將由 JavaScript 動態生成 -->
+                </div>
+                
+                <div id="songsContainer" class="songs-container">
+                    載入中...
+                </div>
+                
+                <!-- 底部分頁控制 -->
+                <div id="paginationBottom" class="pagination-controls">
+                    <!-- 分頁按鈕將由 JavaScript 動態生成 -->
+                </div>
+            </section>
+
+            <!-- 統計資料 -->
+            <section class="statistics-section">
+                <h2>統計資料</h2>
+                <div id="statisticsContainer" class="statistics-container">
+                    載入中...
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 刪除確認對話框 -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <h3 id="deleteModalTitle">確認刪除</h3>
+            <p id="deleteModalMessage">確定要刪除嗎？</p>
+            <div class="modal-actions">
+                <input type="password" id="deleteAuthCode" placeholder="請輸入授權碼" class="auth-input">
+                <button id="confirmDelete" class="btn btn-danger">確認刪除</button>
+                <button id="cancelDelete" class="btn btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
