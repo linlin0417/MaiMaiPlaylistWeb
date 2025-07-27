@@ -6,18 +6,22 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "backup": "node backup.js"
+    "backup": "node backup.js",
+    "check": "node check-env.js",
+    "prod": "node start.js"
   },
   "keywords": ["node", "music", "game", "tracker"],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
-    "body-parser": "^1.20.2",
-    "fs": "^0.0.1-security",
-    "path": "^0.12.7"
+    "body-parser": "^1.20.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
   }
 }

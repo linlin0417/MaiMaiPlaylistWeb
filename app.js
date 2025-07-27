@@ -15,6 +15,11 @@ const CONFIG = {
     BACKUP_DIR: path.join(__dirname, 'backup')
 };
 
+// 生產環境安全設定
+if (process.env.NODE_ENV === 'production') {
+    console.log('🔒 生產環境模式啟動');
+}
+
 // 中介軟體設定
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -28,148 +33,165 @@ function initializeSystem() {
     const dataDir = path.dirname(CONFIG.DATA_FILE);
     let isFirstRun = false;
     
-    // 1. 建立資料目錄
-    if (!fs.existsSync(dataDir)) {
-        console.log('✅ 建立資料目錄:', dataDir);
-        fs.mkdirSync(dataDir, { recursive: true });
-        isFirstRun = true;
-    }
-    
-    // 2. 建立備份目錄
-    if (!fs.existsSync(CONFIG.BACKUP_DIR)) {
-        console.log('✅ 建立備份目錄:', CONFIG.BACKUP_DIR);
-        fs.mkdirSync(CONFIG.BACKUP_DIR, { recursive: true });
-    }
-    
-    // 3. 初始化播放清單檔案
-    if (!fs.existsSync(CONFIG.DATA_FILE)) {
-        console.log('✅ 建立播放清單資料檔案:', CONFIG.DATA_FILE);
-        const initialPlaylistData = {
-            playlists: [],
-            statistics: {
-                totalSongs: 0,
-                totalPlayed: 0,
-                lastUpdated: new Date().toISOString()
-            }
-        };
-        fs.writeFileSync(CONFIG.DATA_FILE, JSON.stringify(initialPlaylistData, null, 2), 'utf8');
-        isFirstRun = true;
-    }
-    
-    // 4. 初始化舊版歌曲檔案（向後相容）
-    if (!fs.existsSync(CONFIG.SONGS_FILE)) {
-        console.log('✅ 建立舊版歌曲資料檔案（向後相容）:', CONFIG.SONGS_FILE);
-        const initialSongsData = {
-            songs: [],
-            statistics: {
-                totalPlayed: 0,
-                lastUpdated: new Date().toISOString()
-            }
-        };
-        fs.writeFileSync(CONFIG.SONGS_FILE, JSON.stringify(initialSongsData, null, 2), 'utf8');
-    }
-    
-    // 5. 驗證現有資料檔案完整性
     try {
-        const playlistData = JSON.parse(fs.readFileSync(CONFIG.DATA_FILE, 'utf8'));
-        if (!playlistData.playlists || !playlistData.statistics) {
-            console.log('⚠️  播放清單資料結構不完整，正在修復...');
-            const repairedData = {
-                playlists: playlistData.playlists || [],
-                statistics: playlistData.statistics || {
+        // 1. 建立資料目錄
+        if (!fs.existsSync(dataDir)) {
+            console.log('✅ 建立資料目錄:', dataDir);
+            fs.mkdirSync(dataDir, { recursive: true });
+            isFirstRun = true;
+        }
+        
+        // 2. 建立備份目錄
+        if (!fs.existsSync(CONFIG.BACKUP_DIR)) {
+            console.log('✅ 建立備份目錄:', CONFIG.BACKUP_DIR);
+            fs.mkdirSync(CONFIG.BACKUP_DIR, { recursive: true });
+        }
+        
+        // 3. 初始化播放清單檔案
+        if (!fs.existsSync(CONFIG.DATA_FILE)) {
+            console.log('✅ 建立播放清單資料檔案:', CONFIG.DATA_FILE);
+            const initialPlaylistData = {
+                playlists: [],
+                statistics: {
                     totalSongs: 0,
                     totalPlayed: 0,
                     lastUpdated: new Date().toISOString()
                 }
             };
-            fs.writeFileSync(CONFIG.DATA_FILE, JSON.stringify(repairedData, null, 2), 'utf8');
+            fs.writeFileSync(CONFIG.DATA_FILE, JSON.stringify(initialPlaylistData, null, 2), 'utf8');
+            isFirstRun = true;
         }
-    } catch (error) {
-        console.error('❌ 播放清單資料檔案損壞，正在重建...');
-        const defaultData = {
-            playlists: [],
-            statistics: {
-                totalSongs: 0,
-                totalPlayed: 0,
-                lastUpdated: new Date().toISOString()
+        
+        // 4. 初始化舊版歌曲檔案（向後相容）
+        if (!fs.existsSync(CONFIG.SONGS_FILE)) {
+            console.log('✅ 建立舊版歌曲資料檔案（向後相容）:', CONFIG.SONGS_FILE);
+            const initialSongsData = {
+                songs: [],
+                statistics: {
+                    totalPlayed: 0,
+                    lastUpdated: new Date().toISOString()
+                }
+            };
+            fs.writeFileSync(CONFIG.SONGS_FILE, JSON.stringify(initialSongsData, null, 2), 'utf8');
+        }
+        
+        // 5. 驗證現有資料檔案完整性
+        try {
+            const playlistData = JSON.parse(fs.readFileSync(CONFIG.DATA_FILE, 'utf8'));
+            if (!playlistData.playlists || !playlistData.statistics) {
+                console.log('⚠️  播放清單資料結構不完整，正在修復...');
+                const repairedData = {
+                    playlists: playlistData.playlists || [],
+                    statistics: playlistData.statistics || {
+                        totalSongs: 0,
+                        totalPlayed: 0,
+                        lastUpdated: new Date().toISOString()
+                    }
+                };
+                fs.writeFileSync(CONFIG.DATA_FILE, JSON.stringify(repairedData, null, 2), 'utf8');
             }
-        };
-        fs.writeFileSync(CONFIG.DATA_FILE, JSON.stringify(defaultData, null, 2), 'utf8');
-    }
-    
-    // 6. 建立範例檔案
-    const examplePlaylistFile = path.join(dataDir, 'playlists.example.json');
-    const exampleSongsFile = path.join(dataDir, 'songs.example.json');
-    
-    if (!fs.existsSync(examplePlaylistFile)) {
-        const examplePlaylistData = {
-            "playlists": [
-                {
-                    "id": "example_1234567890",
-                    "name": "範例清單",
-                    "songs": [
-                        {
-                            "id": "song_1234567890",
-                            "name": "Connect",
-                            "difficulty": "Master",
-                            "notes": "練習手速",
-                            "played": false,
-                            "addedAt": "2025-01-01T00:00:00.000Z",
-                            "playedAt": null
-                        }
-                    ],
-                    "createdAt": "2025-01-01T00:00:00.000Z",
+        } catch (error) {
+            console.error('❌ 播放清單資料檔案損壞，正在重建...');
+            const defaultData = {
+                playlists: [],
+                statistics: {
+                    totalSongs: 0,
+                    totalPlayed: 0,
+                    lastUpdated: new Date().toISOString()
+                }
+            };
+            fs.writeFileSync(CONFIG.DATA_FILE, JSON.stringify(defaultData, null, 2), 'utf8');
+        }
+        
+        // 6. 建立範例檔案
+        const examplePlaylistFile = path.join(dataDir, 'playlists.example.json');
+        const exampleSongsFile = path.join(dataDir, 'songs.example.json');
+        
+        if (!fs.existsSync(examplePlaylistFile)) {
+            const examplePlaylistData = {
+                "playlists": [
+                    {
+                        "id": "example_1234567890",
+                        "name": "範例清單",
+                        "songs": [
+                            {
+                                "id": "song_1234567890",
+                                "name": "Connect",
+                                "difficulty": "Master",
+                                "notes": "練習手速",
+                                "played": false,
+                                "addedAt": "2025-01-01T00:00:00.000Z",
+                                "playedAt": null
+                            }
+                        ],
+                        "createdAt": "2025-01-01T00:00:00.000Z",
+                        "lastUpdated": "2025-01-01T00:00:00.000Z"
+                    }
+                ],
+                "statistics": {
+                    "totalSongs": 1,
+                    "totalPlayed": 0,
                     "lastUpdated": "2025-01-01T00:00:00.000Z"
                 }
-            ],
-            "statistics": {
-                "totalSongs": 1,
-                "totalPlayed": 0,
-                "lastUpdated": "2025-01-01T00:00:00.000Z"
-            }
-        };
-        fs.writeFileSync(examplePlaylistFile, JSON.stringify(examplePlaylistData, null, 2), 'utf8');
-    }
-    
-    if (!fs.existsSync(exampleSongsFile)) {
-        const exampleSongsData = {
-            "songs": [
-                {
-                    "id": "1234567890",
-                    "name": "Connect",
-                    "difficulty": "Master",
-                    "score": 101000,
-                    "notes": "練習手速",
-                    "playedAt": "2025-01-01T00:00:00.000Z",
-                    "playCount": 1
+            };
+            fs.writeFileSync(examplePlaylistFile, JSON.stringify(examplePlaylistData, null, 2), 'utf8');
+        }
+        
+        if (!fs.existsSync(exampleSongsFile)) {
+            const exampleSongsData = {
+                "songs": [
+                    {
+                        "id": "1234567890",
+                        "name": "Connect",
+                        "difficulty": "Master",
+                        "score": 101000,
+                        "notes": "練習手速",
+                        "playedAt": "2025-01-01T00:00:00.000Z",
+                        "playCount": 1
+                    }
+                ],
+                "statistics": {
+                    "totalPlayed": 1,
+                    "lastUpdated": "2025-01-01T00:00:00.000Z"
                 }
-            ],
-            "statistics": {
-                "totalPlayed": 1,
-                "lastUpdated": "2025-01-01T00:00:00.000Z"
-            }
-        };
-        fs.writeFileSync(exampleSongsFile, JSON.stringify(exampleSongsData, null, 2), 'utf8');
+            };
+            fs.writeFileSync(exampleSongsFile, JSON.stringify(exampleSongsData, null, 2), 'utf8');
+        }
+        
+        // 7. 顯示初始化結果
+        if (isFirstRun) {
+            console.log('=====================================');
+            console.log('🎉 首次執行初始化完成！');
+            console.log('');
+            console.log('系統資訊：');
+            console.log('- 伺服器埠號: ' + PORT);
+            console.log('- 目前授權碼: ' + CONFIG.AUTH_CODE + (process.env.AUTH_CODE ? ' (來自環境變數)' : ' (預設值)'));
+            console.log('- 資料儲存路徑: ' + CONFIG.DATA_FILE);
+            console.log('');
+            console.log('注意事項：');
+            console.log('- data/ 目錄中的檔案包含使用者資料');
+            console.log('- 建議使用環境變數 AUTH_CODE 設定授權碼（更安全）');
+            console.log('- 或在 app.js 中的 CONFIG.AUTH_CODE 修改預設值');
+            console.log('- 建議定期備份 data/ 目錄');
+        } else {
+            console.log('✅ 系統檢查完成，所有必要檔案已就緒');
+        }
+        
+    } catch (error) {
+        console.error('❌ 系統初始化失敗:', error.message);
+        console.error('請檢查檔案權限或手動建立以下目錄:');
+        console.error('- ' + dataDir);
+        console.error('- ' + CONFIG.BACKUP_DIR);
+        
+        // 在生產環境中，如果無法建立檔案，至少要能啟動伺服器
+        if (process.env.NODE_ENV === 'production') {
+            console.warn('⚠️  生產環境：將以只讀模式啟動');
+            return false;
+        } else {
+            process.exit(1);
+        }
     }
     
-    // 7. 顯示初始化結果
-    if (isFirstRun) {
-        console.log('=====================================');
-        console.log('🎉 首次執行初始化完成！');
-        console.log('');
-        console.log('系統資訊：');
-        console.log('- 伺服器埠號: ' + PORT);
-        console.log('- 目前授權碼: ' + CONFIG.AUTH_CODE + (process.env.AUTH_CODE ? ' (來自環境變數)' : ' (預設值)'));
-        console.log('- 資料儲存路徑: ' + CONFIG.DATA_FILE);
-        console.log('');
-        console.log('注意事項：');
-        console.log('- data/ 目錄中的檔案包含使用者資料');
-        console.log('- 建議使用環境變數 AUTH_CODE 設定授權碼（更安全）');
-        console.log('- 或在 app.js 中的 CONFIG.AUTH_CODE 修改預設值');
-        console.log('- 建議定期備份 data/ 目錄');
-    } else {
-        console.log('✅ 系統檢查完成，所有必要檔案已就緒');
-    }
     console.log('=====================================');
 }
 
